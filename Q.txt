@@ -1,0 +1,98 @@
+q1
+
+WITH table1
+AS (SELECT
+  *
+FROM category AS ca
+JOIN film_category AS fcs
+  ON fcs.category_id = ca.category_id
+JOIN film AS fz
+  ON fz.film_id = fcs.film_id
+JOIN Inventory AS iv
+  ON iv.film_id = fz.film_id
+JOIN rental AS re
+  ON iv.inventory_id = re.inventory_id
+WHERE ca.name IN ('Animation', 'Children', 'Classics', 'Comedy', 'Family', 'Music')
+ORDER BY title)
+
+SELECT
+  title AS film_title,
+  name AS category_name,
+  COUNT(*) AS rental_count
+FROM table1
+GROUP BY 1,
+         2
+ORDER BY 2, 1;
+
+
+
+q2
+WITH table1
+AS (SELECT
+  ca.name,
+  fz.rental_duration,
+  NTILE(4) OVER (ORDER BY fz.rental_duration) AS standard_quartile
+
+FROM category AS ca
+JOIN film_category AS fcs
+  ON ca.category_id = fcs.category_id
+
+JOIN film AS fz
+  ON fcs.film_id = fz.film_id
+
+WHERE ca.name IN ('Animation', 'Children', 'Classics', 'Comedy', 'Family', 'Music'))
+
+SELECT
+  name,
+  standard_quartile,
+  COUNT(standard_quartile)
+FROM table1
+
+GROUP BY 1,
+         2
+ORDER BY 1, 2;
+
+Q3
+SELECT
+  DATE_PART('month', red.rental_date) AS Rental_month,
+  DATE_PART('year', red.rental_date) AS Rental_year,
+  stf.store_id AS Store_id,
+  COUNT(*) AS Count_rentals
+
+FROM rental AS red
+JOIN staff AS stf
+  ON red.staff_id = stf.staff_id
+GROUP BY 1,
+         2,
+         3
+ORDER BY 4 DESC;
+
+Q4
+
+WITH table1
+AS (SELECT
+  pa.customer_id,
+  CONCAT(ca.first_name, ' ', ca.last_name) AS fullname,
+  SUM(pa.amount) pay_amount
+FROM payment AS pa
+JOIN customer AS ca
+  ON pa.customer_id = ca.customer_id
+GROUP BY 1,
+         2
+ORDER BY 3 DESC
+LIMIT 10)
+
+SELECT
+  TO_CHAR(pay.payment_date, 'month') AS pay_mon,
+  t1.fullname,
+  COUNT(*) AS pay_countpermon,
+  SUM(pay.amount) AS pay_amount
+
+FROM table1 AS t1
+JOIN payment AS pay
+  ON t1.customer_id = pay.customer_id
+WHERE DATE_TRUNC('month', pay.payment_date) BETWEEN '2007-01-01' AND '2008-01-01'
+
+GROUP BY 1,
+         2
+ORDER BY 2, EXTRACT(MONTH FROM TO_DATE(TO_CHAR(pay.payment_date,'month'), 'Month'));
